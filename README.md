@@ -14,6 +14,8 @@ Administrators or users who are familiar with the Salesforce API and SOQL can tr
 
 The Identity Forensics Pilot has no user interface in the Salesforce application to manage or view login event or metric data. However, you can access these events through the API. Several tools and programming languages can consume the Force.com SOAP API and REST API with the cURL utility. For example, you can use the [Force.com IDE](https://developer.salesforce.com/page/Force.com_IDE), [Workbench](https://workbench.developerforce.com/login.php), and [other development tools](https://developer.salesforce.com/page/Tools).
 
+![alt tag] (https://raw.githubusercontent.com/atorman/IdForensics/master/idforensics.png)
+
 #Installation
 
 The easiest way to install this project into your organization is to make use of the [workbench tool](http://workbench.developerforce.com).
