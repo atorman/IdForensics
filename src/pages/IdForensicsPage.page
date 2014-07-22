@@ -1,0 +1,409 @@
+<apex:page controller="IdForensicsController" sidebar="false"> 
+    <!-- Google API inclusion -->
+    <apex:includeScript id="a" value="https://www.google.com/jsapi" />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+     
+    <apex:sectionHeader title="Login Events + Platform Event Metrics" subtitle="Identity Forensics Data "/>
+ 
+    <!-- Google Charts will be drawn in this DIV -->
+
+<apex:pageBlock title="Identity Forensics Metrics" id="IdForensics">
+    <div id="numLoginsChart" /><br/>
+    <div id="numLoginsByUserChart" /><br/>
+    <div id="NumDistinctIpsByUser" /><br/>
+    <div id="NumDistinctBrowsersByUser" /><br/>
+    <div id="NumDistinctApplicationsByUser" /><br/>
+   
+    <!-- <apex:pageBlockSection title="Metric Data" columns="1">
+        <apex:pageBlockTable value="{!Metrics}" var="Metric">
+            <apex:column >
+            <apex:facet name="header">Metric Time</apex:facet>
+            <apex:outputText value="{!Metric.CreatedDate}"/>
+        </apex:column>
+        <apex:column >
+            <apex:facet name="header">Platform Event Metric Value</apex:facet>
+            <apex:outputText value="{!Metric.EventRatio__c}"/>
+        </apex:column>
+        <apex:column >
+            <apex:facet name="header">Login Event Value</apex:facet>
+            <apex:outputText value="{!Metric.LoginEventValue__c}"/>
+        </apex:column>
+        <apex:column >  
+            <apex:facet name="header">Platform Event Metric Value</apex:facet>
+            <apex:outputText value="{!Metric.PlatformEventMetricsValue__c}"/>
+        </apex:column>
+        </apex:pageBlockTable>
+    </apex:pageBlockSection>-->
+</apex:pageBlock>
+     
+    <script type="text/javascript">
+        // Load the Visualization API and the piechart package.
+        google.load('visualization', '1.1', {'packages':['corechart']});
+        //google.load('visualization', '1.1', {'packages':['annotationchart']});
+       
+        // Set a callback to run when the Google Visualization API is loaded.
+        google.setOnLoadCallback(drawAll);
+
+        function to18(inId){
+            if (inId == null)
+                 return inId;
+            inId = inId.replace(/\"/g, ""); // " -- just so hiliting works
+            if (inId.length != 15)
+                return null;
+            var sfx = "";
+            for (var i = 0; i < 3; i++) {
+                var pos = 0;
+                for (var j = 0; j < 5; j++) {
+                    var c = inId.charAt(i * 5 + j);
+                    if (c >= "A" && c <= "Z")
+                        pos += 1 << j;
+                }
+                if (pos <= 25)
+                    sfx += "ABCDEFGHIJKLMNOPQRSTUVWXYZ".charAt(pos);
+                else
+                    sfx += "012345".charAt(pos - 26);
+            }
+            return inId + sfx;
+        }   
+
+        function drawAll(){
+            drawNumLogins();
+            drawNumLoginsByUser();
+            drawNumDistinctIpsByUser();
+            drawNumDistinctBrowsersByUser();
+            drawNumDistinctApplicationsByUser();
+            //drawNumDistinctLoginUrlsByUser();
+            //drawNumDistinctPlatformsByUser();
+           }
+        
+        function drawNumLogins() {        
+          IdForensicsController.loadNumLogins( 
+                 function(result, event){  
+                     //console.log('result: '+result);
+                     
+                     // load Column chart
+                     var visualization = new google.visualization.AreaChart(document.getElementById('numLoginsChart'));
+                     
+                     // Prepare table model for chart with columns
+                     var data = new google.visualization.DataTable();
+                     data.addColumn('date', 'MetricTime');
+                     data.addColumn('number', 'MetricValue');
+                     //console.log('data: '+data);
+                     
+                     // add rows from the remoting results
+                     for(var i =0; i<result.length;i++){
+                        var r = result[i];
+                        var myDate = new Date(r.MetricTime);
+                        data.addRow([myDate, r.MetricValue]); 
+                        //console.log('myDate: ' + myDate + ' MetricValue: ' + r.MetricValue);
+                      }
+                    
+                    
+                    // all done, lets draw the chart with some options to make it look nice.
+                    visualization.draw(data, 
+                    {title:'Number of Logins',
+                     colors:['red'],
+                    legend : 
+                        {position: 'top', textStyle: 
+                            {color: 'red', fontSize: 10}
+                        }, 
+                        width:window.innerWidth,vAxis:
+                        {textStyle:{fontSize: 10}},
+                        hAxis:{
+                            textStyle:
+                                {fontSize: 10},
+                        showTextEvery:1,
+                        slantedText:false}
+                    });
+              }, {escape:true});
+          } 
+          
+          // NumLoginsByUser Time Series Chart
+          function drawNumLoginsByUser() {         
+          // Get the metric data from the Apex Controller:
+          IdForensicsController.loadNumLoginsByUser( 
+                 function(results, event){  
+                    
+                    // declare the nested map object
+                    var finalMap = {};
+                    
+                    var userIds = {};
+                    
+                    // build the nested map object
+                    for (var i in results.metrics) {
+                        var result = results.metrics[i];
+                        if (result === undefined || result.MetricTime === undefined) {
+                            continue;
+                        }
+                        // check the results object that were passed in from Apex
+                        //console.log('RESULT : ' + JSON.stringify(result));
+                        
+                        // example output: "RESULT : {"MetricValue":1,"AggregationFieldValue":"005D0000001L1cg","Id":"000000000000000AAA","MetricTime":1401292800000}"
+                       
+                        // If not null, add to it; if null build the first map object
+                        if(finalMap[result.MetricTime] == undefined) {
+                            finalMap[result.MetricTime] = {};
+                        }
+                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
+                    }
+
+                     // check the results of the mapping process
+                     // console.log('finalMap: '+ JSON.stringify(finalMap));
+                     // console.log('userIds: ' + JSON.stringify(userIds));
+                    
+                     var visualization = new google.visualization.AreaChart(document.getElementById('numLoginsByUserChart'));
+                     // Prepare table model for chart with columns
+                     var data = new google.visualization.DataTable();
+                     
+                     // TODO: build the columns for the chart based on nested map values
+                     data.addColumn('date', 'Date');
+                     for (var userId in userIds) {
+                         data.addColumn('number', results.userNameById[to18(userId)], userId);
+                     }
+                     
+                     //console.log('data: '+data);
+                     
+                     // add rows from the remoting results
+                     for(var key in finalMap){
+                         var row = [new Date(parseInt(key))];
+                         for (var userId in userIds) {
+                             row.push(finalMap[key][userId] || 0);
+                         }
+                         //console.log('ROW: ' + row);
+                         data.addRow(row);
+                      }
+                    
+                    
+                    // all done, lets draw the chart with some options to make it look nice.
+                    visualization.draw(data, 
+                    {title:'Number of Logins By User',
+                    legend : 
+                        {position: 'top', textStyle: 
+                            {color: 'red', fontSize: 10}
+                        }, 
+                        width:window.innerWidth,vAxis:
+                        {textStyle:{fontSize: 10}},
+                        hAxis:{
+                            textStyle:
+                                {fontSize: 10},
+                        showTextEvery:1,
+                        slantedText:false}
+                    });
+              }, {escape:true});
+          }
+          
+          // NumDistinctIpsByUser Time Series Chart
+          function drawNumDistinctIpsByUser() {         
+          // Get the metric data from the Apex Controller:
+          IdForensicsController.loadNumDistinctIpsByUser( 
+                 function(results, event){  
+                    
+                    // declare the nested map object
+                    var finalMap = {};
+                    
+                    var userIds = {};
+                    
+                    // build the nested map object
+                    for (var i in results.metrics) {
+                        var result = results.metrics[i];
+                        if (result === undefined || result.MetricTime === undefined) {
+                            continue;
+                        }
+                        // check the results object that were passed in from Apex
+                        //console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
+                                               
+                        // If not null, add to it; if null build the first map object
+                        if(finalMap[result.MetricTime] == undefined) {
+                            finalMap[result.MetricTime] = {};
+                        }
+                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
+                    }
+
+                     // check the results of the mapping process
+                     //console.log('NumDistinctIpsByUser finalMap: '+ JSON.stringify(finalMap));
+                     //console.log('NumDistinctIpsByUser userIds: ' + JSON.stringify(userIds));
+                    
+                     var visualization = new google.visualization.AreaChart(document.getElementById('NumDistinctIpsByUser'));
+                     // Prepare table model for chart with columns
+                     var data = new google.visualization.DataTable();
+                     
+                     // TODO: build the columns for the chart based on nested map values
+                     data.addColumn('date', 'Date');
+                     for (var userId in userIds) {
+                         data.addColumn('number', results.userNameById[to18(userId)], userId);
+                     }
+                                          
+                     // add rows from the remoting results
+                     for(var key in finalMap){
+                         var row = [new Date(parseInt(key))];
+                         for (var userId in userIds) {
+                             row.push(finalMap[key][userId] || 0);
+                         }
+                         //console.log('ROW: ' + row);
+                         data.addRow(row);
+                      }
+                    
+                    
+                    // all done, lets draw the chart with some options to make it look nice.
+                    visualization.draw(data, 
+                    {title:'Number of Distinct Ips By User',
+                    legend : 
+                        {position: 'top', textStyle: 
+                            {color: 'red', fontSize: 10}
+                        }, 
+                        width:window.innerWidth,vAxis:
+                        {textStyle:{fontSize: 10}},
+                        hAxis:{
+                            textStyle:
+                                {fontSize: 10},
+                        showTextEvery:1,
+                        slantedText:false}
+                    });
+              }, {escape:true});
+          }
+          
+          // NumDistinctBrowsersByUser Time Series Chart
+          function drawNumDistinctBrowsersByUser() {         
+          // Get the metric data from the Apex Controller:
+          IdForensicsController.loadNumDistinctBrowsersByUser( 
+                 function(results, event){  
+                    
+                    // declare the nested map object
+                    var finalMap = {};
+                    
+                    var userIds = {};
+                    
+                    // build the nested map object
+                    for (var i in results.metrics) {
+                        var result = results.metrics[i];
+                        if (result === undefined || result.MetricTime === undefined) {
+                            continue;
+                        }
+                        // check the results object that were passed in from Apex
+                        //console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
+                                               
+                        // If not null, add to it; if null build the first map object
+                        if(finalMap[result.MetricTime] == undefined) {
+                            finalMap[result.MetricTime] = {};
+                        }
+                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
+                    }
+
+                     // check the results of the mapping process
+                     //console.log('NumDistinctIpsByUser finalMap: '+ JSON.stringify(finalMap));
+                     //console.log('NumDistinctIpsByUser userIds: ' + JSON.stringify(userIds));
+                    
+                     var visualization = new google.visualization.AreaChart(document.getElementById('NumDistinctBrowsersByUser'));
+                     // Prepare table model for chart with columns
+                     var data = new google.visualization.DataTable();
+                     
+                     // TODO: build the columns for the chart based on nested map values
+                     data.addColumn('date', 'Date');
+                     for (var userId in userIds) {
+                         data.addColumn('number', results.userNameById[to18(userId)], userId);
+                     }
+                                          
+                     // add rows from the remoting results
+                     for(var key in finalMap){
+                         var row = [new Date(parseInt(key))];
+                         for (var userId in userIds) {
+                             row.push(finalMap[key][userId] || 0);
+                         }
+                         //console.log('ROW: ' + row);
+                         data.addRow(row);
+                      }
+                    
+                    
+                    // all done, lets draw the chart with some options to make it look nice.
+                    visualization.draw(data, 
+                    {title:'Number Distinct Browsers By User',
+                    legend : 
+                        {position: 'top', textStyle: 
+                            {color: 'red', fontSize: 10}
+                        }, 
+                        width:window.innerWidth,vAxis:
+                        {textStyle:{fontSize: 10}},
+                        hAxis:{
+                            textStyle:
+                                {fontSize: 10},
+                        showTextEvery:1,
+                        slantedText:false}
+                    });
+              }, {escape:true});
+          }
+
+          // NumDistinctApplicationsByUser Time Series Chart
+          function drawNumDistinctApplicationsByUser() {         
+          // Get the metric data from the Apex Controller:
+          IdForensicsController.loadNumDistinctApplicationsByUser( 
+                 function(results, event){  
+                    
+                    // declare the nested map object
+                    var finalMap = {};
+                    
+                    var userIds = {};
+                    
+                    // build the nested map object
+                    for (var i in results.metrics) {
+                        var result = results.metrics[i];
+                        if (result === undefined || result.MetricTime === undefined) {
+                            continue;
+                        }
+                        // check the results object that were passed in from Apex
+                        //console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
+                                               
+                        // If not null, add to it; if null build the first map object
+                        if(finalMap[result.MetricTime] == undefined) {
+                            finalMap[result.MetricTime] = {};
+                        }
+                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
+                    }
+
+                     // check the results of the mapping process
+                     //console.log('NumDistinctIpsByUser finalMap: '+ JSON.stringify(finalMap));
+                     //console.log('NumDistinctIpsByUser userIds: ' + JSON.stringify(userIds));
+                    
+                     var visualization = new google.visualization.AreaChart(document.getElementById('NumDistinctApplicationsByUser'));
+                     // Prepare table model for chart with columns
+                     var data = new google.visualization.DataTable();
+                     
+                     // TODO: build the columns for the chart based on nested map values
+                     data.addColumn('date', 'Date');
+                     for (var userId in userIds) {
+                         data.addColumn('number', results.userNameById[to18(userId)], userId);
+                     }
+                                          
+                     // add rows from the remoting results
+                     for(var key in finalMap){
+                         var row = [new Date(parseInt(key))];
+                         for (var userId in userIds) {
+                             row.push(finalMap[key][userId] || 0);
+                         }
+                         //console.log('ROW: ' + row);
+                         data.addRow(row);
+                      }
+  
+                    // all done, lets draw the chart with some options to make it look nice.
+                    visualization.draw(data, 
+                    {title:'Number Distinct Applications By User',
+                    legend : 
+                        {position: 'top', textStyle: 
+                            {color: 'red', fontSize: 10}
+                        }, 
+                        width:window.innerWidth,vAxis:
+                        {textStyle:{fontSize: 10}},
+                        hAxis:{
+                            textStyle:
+                                {fontSize: 10},
+                        showTextEvery:1,
+                        slantedText:false}
+                    });
+              }, {escape:true});
+          }       
+     
+    </script>
+</apex:page>
