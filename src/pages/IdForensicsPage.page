@@ -79,7 +79,7 @@
         function drawNumLogins() {        
           IdForensicsController.loadNumLogins( 
                  function(result, event){  
-                     //console.log('result: '+result);
+                     console.log('result: '+result);
                      
                      // load Column chart
                      var visualization = new google.visualization.AreaChart(document.getElementById('numLoginsChart'));
@@ -88,7 +88,7 @@
                      var data = new google.visualization.DataTable();
                      data.addColumn('date', 'MetricTime');
                      data.addColumn('number', 'MetricValue');
-                     //console.log('data: '+data);
+                     console.log('data: '+data);
                      
                      // add rows from the remoting results
                      for(var i =0; i<result.length;i++){
@@ -211,14 +211,17 @@
                             continue;
                         }
                         // check the results object that were passed in from Apex
-                        //console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
+                        console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
                                                
                         // If not null, add to it; if null build the first map object
                         if(finalMap[result.MetricTime] == undefined) {
                             finalMap[result.MetricTime] = {};
+                            console.log('finalMap1 : ' + JSON.stringify(finalMap));
                         }
                         finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        console.log('finalMap2 : ' + JSON.stringify(finalMap));
                         if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
+                        console.log('userIds : ' + JSON.stringify(userIds));
                     }
 
                      // check the results of the mapping process

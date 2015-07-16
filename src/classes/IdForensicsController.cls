@@ -4,9 +4,10 @@ global with sharing class IdForensicsController {
    @RemoteAction   
     global static PlatformEventMetrics[] loadNumLogins() {
         return [SELECT MetricTime, MetricValue FROM PlatformEventMetrics
-            WHERE MetricType='NumLogins'
+            WHERE EventType = 'LoginEvent' 
+            AND MetricType='NumLogins'
             AND MetricTime = Last_n_Days:7
-            ORDER BY MetricTime DESC NULLS FIRST ];
+            ];
     }  
     
        
@@ -20,9 +21,10 @@ global with sharing class IdForensicsController {
     global static ByNumLoginsByUserResults loadNumLoginsByUser() {
         ByNumLoginsByUserResults result = new ByNumLoginsByUserResults();
         result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE MetricType='NumLoginsByUser'
+            WHERE EventType = 'LoginEvent' 
+            AND MetricType='NumLoginsByUser'
             AND MetricTime = Last_n_Days:7
-            ORDER BY MetricTime,AggregationFieldValue DESC NULLS FIRST];
+            ];
         
         Map<String,String> userIds = new Map<String,String>();    
         for (PlatformEventMetrics m : result.metrics) {
@@ -48,9 +50,10 @@ global with sharing class IdForensicsController {
     global static ByNumDistinctIpsByUserResults loadNumDistinctIpsByUser() {
         ByNumDistinctIpsByUserResults result = new ByNumDistinctIpsByUserResults();
         result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE MetricType='NumDistinctIpsByUser'
+            WHERE EventType = 'LoginEvent' 
+            AND MetricType='NumDistinctIpsByUser'
             AND MetricTime = Last_n_Days:7
-            ORDER BY MetricTime,AggregationFieldValue DESC NULLS FIRST];
+            ];
         
         Map<String,String> userIds = new Map<String,String>();    
         for (PlatformEventMetrics m : result.metrics) {
@@ -75,9 +78,10 @@ global with sharing class IdForensicsController {
     global static ByNumDistinctBrowsersByUserResults loadNumDistinctBrowsersByUser() {
         ByNumDistinctBrowsersByUserResults result = new ByNumDistinctBrowsersByUserResults();
         result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE MetricType='NumDistinctBrowsersByUser'
+            WHERE EventType = 'LoginEvent' 
+            AND MetricType='NumDistinctBrowsersByUser'
             AND MetricTime = Last_n_Days:7
-            ORDER BY MetricTime,AggregationFieldValue DESC NULLS FIRST];
+            ];
         
         Map<String,String> userIds = new Map<String,String>();    
         for (PlatformEventMetrics m : result.metrics) {
@@ -102,9 +106,10 @@ global with sharing class IdForensicsController {
     global static ByNumDistinctApplicationsByUserResults loadNumDistinctApplicationsByUser() {
         ByNumDistinctApplicationsByUserResults result = new ByNumDistinctApplicationsByUserResults();
         result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE MetricType='NumDistinctApplicationsByUser'
+            WHERE EventType = 'LoginEvent' 
+            AND MetricType='NumDistinctApplicationsByUser'
             AND MetricTime = Last_n_Days:7
-            ORDER BY MetricTime,AggregationFieldValue DESC NULLS FIRST];
+            ];
         
         Map<String,String> userIds = new Map<String,String>();    
         for (PlatformEventMetrics m : result.metrics) {
