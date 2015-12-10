@@ -3,11 +3,96 @@
     <apex:includeScript id="a" value="https://www.google.com/jsapi" />
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
      
-    <apex:sectionHeader title="Login Events + Platform Event Metrics" subtitle="Identity Forensics Data "/>
+    <apex:sectionHeader title="Login Events + Platform Event Metrics" subtitle="Login Forensics Data "/>
+    
+    <h1>To learn more about the Login Forensics Pilot, read the <a href="http://bit.ly/LoginForensicsSpring15" target="_blank">release notes</a> or the <a href="http://bit.ly/LoginForensicsDoc" target="_blank">tip sheet</a> for more detail.</h1>
+      
+       <apex:pageBlock title="Today's Login Events" id="TodaysEvents" >
+        <apex:dataTable value="{!le}"
+                        var="sd"
+                        cellPadding="4" border="1">
+          <apex:column >
+            <apex:facet name="header" >Additional Info</apex:facet>
+            {!sd.AdditionalInfo}
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header" >Api Type</apex:facet>
+            {!sd.ApiType}
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header" >Api Version</apex:facet>
+            {!sd.ApiVersion}
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header" >Application</apex:facet>
+            {!sd.Application}
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header" >AuthServiceId</apex:facet>
+            {!sd.AuthServiceId}
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header" >Browser</apex:facet>
+            {!sd.Browser}
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header" >Client Version</apex:facet>
+            {!sd.ClientVersion}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Created Date</apex:facet>
+            {!sd.CreatedDate}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Event Date</apex:facet>
+            {!sd.EventDate}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Id</apex:facet>
+            {!sd.Id}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >LoginGeoId</apex:facet>
+            {!sd.LoginGeoId}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Session Id</apex:facet>
+            {!sd.LoginHistoryId}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Login Type</apex:facet>
+            {!sd.LoginType}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Login Url</apex:facet>
+            {!sd.LoginUrl}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Platform</apex:facet>
+            {!sd.Platform}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >SourceIp</apex:facet>
+            {!sd.SourceIp}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >Status</apex:facet>
+            {!sd.Status}
+          </apex:column>
+          <apex:column >
+             <apex:facet name="header" >UserId</apex:facet>
+            {!sd.UserId}
+          </apex:column>
+          <apex:column >
+          <apex:facet name="header" >Username</apex:facet>
+            {!sd.Username}
+          </apex:column>
+        </apex:dataTable>
+      </apex:pageBlock>
  
-    <!-- Google Charts will be drawn in this DIV -->
+    <!-- Google Charts will be drawn in this DIV --> 
 
-<apex:pageBlock title="Identity Forensics Metrics" id="IdForensics">
+<apex:pageBlock title="Login Forensics Metrics" id="IdForensics">
     <div id="numLoginsChart" /><br/>
     <div id="numLoginsByUserChart" /><br/>
     <div id="NumDistinctIpsByUser" /><br/>
@@ -86,14 +171,14 @@
                      
                      // Prepare table model for chart with columns
                      var data = new google.visualization.DataTable();
-                     data.addColumn('date', 'MetricTime');
+                     data.addColumn('date', 'MetricDate');
                      data.addColumn('number', 'MetricValue');
                      console.log('data: '+data);
                      
                      // add rows from the remoting results
                      for(var i =0; i<result.length;i++){
                         var r = result[i];
-                        var myDate = new Date(r.MetricTime);
+                        var myDate = new Date(r.MetricDate);
                         data.addRow([myDate, r.MetricValue]); 
                         //console.log('myDate: ' + myDate + ' MetricValue: ' + r.MetricValue);
                       }
@@ -132,19 +217,19 @@
                     // build the nested map object
                     for (var i in results.metrics) {
                         var result = results.metrics[i];
-                        if (result === undefined || result.MetricTime === undefined) {
+                        if (result === undefined || result.MetricDate === undefined) {
                             continue;
                         }
                         // check the results object that were passed in from Apex
                         //console.log('RESULT : ' + JSON.stringify(result));
                         
-                        // example output: "RESULT : {"MetricValue":1,"AggregationFieldValue":"005D0000001L1cg","Id":"000000000000000AAA","MetricTime":1401292800000}"
+                        // example output: "RESULT : {"MetricValue":1,"AggregationFieldValue":"005D0000001L1cg","Id":"000000000000000AAA","MetricDate":1401292800000}"
                        
                         // If not null, add to it; if null build the first map object
-                        if(finalMap[result.MetricTime] == undefined) {
-                            finalMap[result.MetricTime] = {};
+                        if(finalMap[result.MetricDate] == undefined) {
+                            finalMap[result.MetricDate] = {};
                         }
-                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        finalMap[result.MetricDate][result.AggregationFieldValue] = result.MetricValue;
                         if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
                     }
 
@@ -207,18 +292,18 @@
                     // build the nested map object
                     for (var i in results.metrics) {
                         var result = results.metrics[i];
-                        if (result === undefined || result.MetricTime === undefined) {
+                        if (result === undefined || result.MetricDate === undefined) {
                             continue;
                         }
                         // check the results object that were passed in from Apex
                         console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
                                                
                         // If not null, add to it; if null build the first map object
-                        if(finalMap[result.MetricTime] == undefined) {
-                            finalMap[result.MetricTime] = {};
+                        if(finalMap[result.MetricDate] == undefined) {
+                            finalMap[result.MetricDate] = {};
                             console.log('finalMap1 : ' + JSON.stringify(finalMap));
                         }
-                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        finalMap[result.MetricDate][result.AggregationFieldValue] = result.MetricValue;
                         console.log('finalMap2 : ' + JSON.stringify(finalMap));
                         if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
                         console.log('userIds : ' + JSON.stringify(userIds));
@@ -281,17 +366,17 @@
                     // build the nested map object
                     for (var i in results.metrics) {
                         var result = results.metrics[i];
-                        if (result === undefined || result.MetricTime === undefined) {
+                        if (result === undefined || result.MetricDate === undefined) {
                             continue;
                         }
                         // check the results object that were passed in from Apex
                         //console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
                                                
                         // If not null, add to it; if null build the first map object
-                        if(finalMap[result.MetricTime] == undefined) {
-                            finalMap[result.MetricTime] = {};
+                        if(finalMap[result.MetricDate] == undefined) {
+                            finalMap[result.MetricDate] = {};
                         }
-                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        finalMap[result.MetricDate][result.AggregationFieldValue] = result.MetricValue;
                         if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
                     }
 
@@ -352,17 +437,17 @@
                     // build the nested map object
                     for (var i in results.metrics) {
                         var result = results.metrics[i];
-                        if (result === undefined || result.MetricTime === undefined) {
+                        if (result === undefined || result.MetricDate === undefined) {
                             continue;
                         }
                         // check the results object that were passed in from Apex
                         //console.log('NumDistinctIpsByUser RESULT : ' + JSON.stringify(result));
                                                
                         // If not null, add to it; if null build the first map object
-                        if(finalMap[result.MetricTime] == undefined) {
-                            finalMap[result.MetricTime] = {};
+                        if(finalMap[result.MetricDate] == undefined) {
+                            finalMap[result.MetricDate] = {};
                         }
-                        finalMap[result.MetricTime][result.AggregationFieldValue] = result.MetricValue;
+                        finalMap[result.MetricDate][result.AggregationFieldValue] = result.MetricValue;
                         if (result.AggregationFieldValue !== undefined) userIds[result.AggregationFieldValue] = 1;
                     }
 

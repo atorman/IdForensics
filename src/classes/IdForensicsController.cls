@@ -1,12 +1,19 @@
 global with sharing class IdForensicsController {
-  
+    public List<LoginEvent> le{get;set;}
+    
+    // used to query today's events API Events
+    public IdForensicsController() {
+        le = [SELECT AdditionalInfo,ApiType,ApiVersion,Application,AuthServiceId,Browser,ClientVersion,CreatedDate,EventDate,Id,LoginGeoId,LoginHistoryId,LoginType,LoginUrl,Platform,SourceIp,Status,UserId,Username 
+              FROM LoginEvent 
+              LIMIT 10];
+   }
+    
    // used for the NumLogins MetricType  
    @RemoteAction   
     global static PlatformEventMetrics[] loadNumLogins() {
-        return [SELECT MetricTime, MetricValue FROM PlatformEventMetrics
-            WHERE EventType = 'LoginEvent' 
-            AND MetricType='NumLogins'
-            AND MetricTime = Last_n_Days:7
+        return [SELECT MetricDate, MetricValue FROM PlatformEventMetrics
+            WHERE MetricType='NumLogins'
+            AND MetricDate = Last_n_Days:7
             ];
     }  
     
@@ -20,10 +27,9 @@ global with sharing class IdForensicsController {
    @RemoteAction   
     global static ByNumLoginsByUserResults loadNumLoginsByUser() {
         ByNumLoginsByUserResults result = new ByNumLoginsByUserResults();
-        result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE EventType = 'LoginEvent' 
-            AND MetricType='NumLoginsByUser'
-            AND MetricTime = Last_n_Days:7
+        result.metrics = [SELECT MetricDate, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
+            WHERE MetricType='NumLoginsByUser'
+            AND MetricDate = Last_n_Days:7
             ];
         
         Map<String,String> userIds = new Map<String,String>();    
@@ -49,10 +55,9 @@ global with sharing class IdForensicsController {
     @RemoteAction   
     global static ByNumDistinctIpsByUserResults loadNumDistinctIpsByUser() {
         ByNumDistinctIpsByUserResults result = new ByNumDistinctIpsByUserResults();
-        result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE EventType = 'LoginEvent' 
-            AND MetricType='NumDistinctIpsByUser'
-            AND MetricTime = Last_n_Days:7
+        result.metrics = [SELECT MetricDate, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
+            WHERE MetricType='NumDistinctIpsByUser'
+            AND MetricDate = Last_n_Days:7
             ];
         
         Map<String,String> userIds = new Map<String,String>();    
@@ -77,10 +82,9 @@ global with sharing class IdForensicsController {
     @RemoteAction   
     global static ByNumDistinctBrowsersByUserResults loadNumDistinctBrowsersByUser() {
         ByNumDistinctBrowsersByUserResults result = new ByNumDistinctBrowsersByUserResults();
-        result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE EventType = 'LoginEvent' 
-            AND MetricType='NumDistinctBrowsersByUser'
-            AND MetricTime = Last_n_Days:7
+        result.metrics = [SELECT MetricDate, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
+            WHERE MetricType='NumDistinctBrowsersByUser'
+            AND MetricDate = Last_n_Days:7
             ];
         
         Map<String,String> userIds = new Map<String,String>();    
@@ -105,10 +109,9 @@ global with sharing class IdForensicsController {
     @RemoteAction   
     global static ByNumDistinctApplicationsByUserResults loadNumDistinctApplicationsByUser() {
         ByNumDistinctApplicationsByUserResults result = new ByNumDistinctApplicationsByUserResults();
-        result.metrics = [SELECT MetricTime, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
-            WHERE EventType = 'LoginEvent' 
-            AND MetricType='NumDistinctApplicationsByUser'
-            AND MetricTime = Last_n_Days:7
+        result.metrics = [SELECT MetricDate, MetricValue,AggregationFieldValue FROM PlatformEventMetrics
+            WHERE MetricType='NumDistinctApplicationsByUser'
+            AND MetricDate = Last_n_Days:7
             ];
         
         Map<String,String> userIds = new Map<String,String>();    
